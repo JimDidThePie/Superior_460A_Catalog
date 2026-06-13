@@ -1,0 +1,10 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" fill="#0E2A2F"/>
+  <path d="M0 606C127 545 241 532 342 567C469 611 569 710 708 669C825 635 912 515 1037 528C1095 534 1149 562 1200 603V800H0V606Z" fill="#00B7C7" fill-opacity="0.45"/>
+  <path d="M0 668C112 632 209 628 291 655C416 696 516 748 649 716C757 690 837 607 956 615C1045 621 1121 665 1200 720V800H0V668Z" fill="#55D6C2" fill-opacity="0.5"/>
+  <circle cx="230" cy="190" r="74" fill="#F4D35E"/>
+  <rect x="430" y="250" width="340" height="230" rx="18" fill="#F7FBFC" fill-opacity="0.12" stroke="#F7FBFC" stroke-opacity="0.36" stroke-width="8"/>
+  <path d="M497 407L570 333L645 425L690 378L737 438H463L497 407Z" fill="#F7FBFC" fill-opacity="0.55"/>
+  <circle cx="682" cy="315" r="26" fill="#F7FBFC" fill-opacity="0.62"/>
+  <text x="600" y="560" text-anchor="middle" fill="#F7FBFC" font-family="Arial, sans-serif" font-size="52" font-weight="700">Product Image Coming Soon</text>
+</svg>
