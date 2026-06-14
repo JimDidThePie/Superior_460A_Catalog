@@ -1,0 +1,40 @@
+
+
+
+git status
+
+
+then..
+
+
+git restore .
+
+
+
+
+git reset --hard edc7e8a
+
+------------------------------------
+
+
+Keep these rollback commands handy
+
+If Codex breaks things badly, use:
+
+git status
+
+Then:
+
+git restore .
+
+That undoes uncommitted code changes.
+
+If you commit a bad version later and need to go back to this stable checkpoint:
+
+git reset --hard edc7e8a
+
+For now, don’t run rollback commands. Just save them for emergencies.
+
+You’re in a much safer spot now.
+
+

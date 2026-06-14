@@ -344,12 +344,13 @@ export const subscribeShowroomSettings = (onChange: (settings: ShowroomSettings)
 
   if (localChannel) {
     localChannel.onmessage = (event) => {
+      console.log("Local showroom_settings change:", event.data);
       useLocalSettingsFallback = true;
       onChange(normalizeSettings(event.data as Partial<ShowroomSettings>));
     };
   }
 
-  if (isLocalSettingsFallbackEnabled() || !isSupabaseConfigured || !supabase) {
+  if (!isSupabaseConfigured || !supabase) {
     return () => {
       localChannel?.close();
     };
@@ -357,17 +358,21 @@ export const subscribeShowroomSettings = (onChange: (settings: ShowroomSettings)
 
   const client = supabase;
   const channel = client
-    .channel("showroom-settings")
+    .channel("showroom_settings_changes")
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "showroom_settings", filter: `id=eq.${SETTINGS_ID}` },
+      { event: "*", schema: "public", table: "showroom_settings" },
       (payload) => {
-        const settings = (payload.new as { settings?: Partial<ShowroomSettings> } | null)?.settings;
-        logSettings("settings realtime update received", { id: SETTINGS_ID });
-        onChange(normalizeSettings(settings));
+        console.log("Realtime showroom_settings change:", payload);
+        clearLocalSettingsFallback();
+        void getShowroomSettings()
+          .then(onChange)
+          .catch((error) => console.error("Realtime showroom_settings reload failed:", error));
       },
     )
-    .subscribe();
+    .subscribe((status, error) => {
+      console.log("showroom_settings realtime status:", status, error || "");
+    });
 
   return () => {
     localChannel?.close();

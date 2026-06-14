@@ -177,13 +177,40 @@ const listSupabaseProductsOrLocal = async (): Promise<Product[]> => {
   return sortProducts(((data || []) as ProductRow[]).map(toProduct));
 };
 
+const syncLocalProductsToSupabase = async () => {
+  if (!supabase) {
+    return null;
+  }
+
+  const localProducts = getLocalProducts();
+
+  if (!localProducts.length) {
+    return null;
+  }
+
+  const { error } = await supabase.from("products").upsert(localProducts.map(toRow), { onConflict: "id" });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  disableLocalProductOverride();
+  return sortProducts(localProducts);
+};
+
 export const listProducts = async (): Promise<Product[]> => {
-  if (isLocalProductOverrideEnabled()) {
+  if (!isSupabaseConfigured || !supabase) {
     return sortProducts(getLocalProducts());
   }
 
-  if (!isSupabaseConfigured || !supabase) {
-    return sortProducts(getLocalProducts());
+  if (isLocalProductOverrideEnabled()) {
+    try {
+      const syncedProducts = await syncLocalProductsToSupabase();
+      return syncedProducts || sortProducts(getLocalProducts());
+    } catch (syncError) {
+      console.warn("Supabase products fallback sync failed.", (syncError as Error).message);
+      return sortProducts(getLocalProducts());
+    }
   }
 
   const { data, error } = await supabase.from("products").select("*").order("sort_order", { ascending: true });
@@ -302,28 +329,38 @@ export const reorderProducts = async (products: Product[]) => {
 };
 
 export const subscribeProducts = (onChange: (products: Product[]) => void) => {
-  if (!isSupabaseConfigured || !supabase) {
-    if (!("BroadcastChannel" in window)) {
-      return () => undefined;
-    }
+  const localChannel = "BroadcastChannel" in window ? new BroadcastChannel(CHANNEL_NAME) : null;
 
-    const channel = new BroadcastChannel(CHANNEL_NAME);
-    channel.onmessage = (event) => {
+  if (localChannel) {
+    localChannel.onmessage = (event) => {
+      console.log("Local products change:", event.data);
       const products = Array.isArray(event.data) ? event.data.map(normalizeProduct) : [];
       onChange(sortProducts(products));
     };
-    return () => channel.close();
+  }
+
+  if (!isSupabaseConfigured || !supabase) {
+    return () => {
+      localChannel?.close();
+    };
   }
 
   const client = supabase;
   const channel = client
-    .channel("showroom-products")
-    .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
-      void listProducts().then(onChange);
+    .channel("products_changes")
+    .on("postgres_changes", { event: "*", schema: "public", table: "products" }, (payload) => {
+      console.log("Realtime products change:", payload);
+      disableLocalProductOverride();
+      void listProducts()
+        .then(onChange)
+        .catch((error) => console.error("Realtime products reload failed:", error));
     })
-    .subscribe();
+    .subscribe((status, error) => {
+      console.log("products realtime status:", status, error || "");
+    });
 
   return () => {
+    localChannel?.close();
     void client.removeChannel(channel);
   };
 };

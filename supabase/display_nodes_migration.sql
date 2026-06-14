@@ -254,8 +254,5 @@ exception
   when undefined_object then null;
 end $$;
 
--- The local admin panel writes through the anon key after its own password gate.
--- Keep these disabled unless you replace the local password gate with Supabase Auth policies.
-alter table public.products disable row level security;
-alter table public.showroom_settings disable row level security;
-alter table public.display_nodes disable row level security;
+-- Supabase Auth + RLS policies live in supabase/auth_rls_policies.sql.
+-- Run that file after this migration so /display is public read-only and /admin writes require login.

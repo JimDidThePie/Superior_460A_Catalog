@@ -419,13 +419,14 @@ export const subscribeDisplayNodes = (onChange: (nodes: DisplayNode[]) => void) 
 
   if (localChannel) {
     localChannel.onmessage = (event) => {
+      console.log("Local display_nodes change:", event.data);
       useLocalDisplayNodeFallback = true;
       const nodes = Array.isArray(event.data) ? event.data.map(normalizeDisplayNode) : [];
       onChange(sortDisplayNodes(nodes));
     };
   }
 
-  if (isLocalDisplayNodeFallbackEnabled() || !isSupabaseConfigured || !supabase) {
+  if (!isSupabaseConfigured || !supabase) {
     return () => {
       localChannel?.close();
     };
@@ -433,11 +434,17 @@ export const subscribeDisplayNodes = (onChange: (nodes: DisplayNode[]) => void) 
 
   const client = supabase;
   const channel = client
-    .channel("showroom-display-nodes")
-    .on("postgres_changes", { event: "*", schema: "public", table: "display_nodes" }, () => {
-      void listDisplayNodes().then(onChange);
+    .channel("display_nodes_changes")
+    .on("postgres_changes", { event: "*", schema: "public", table: "display_nodes" }, (payload) => {
+      console.log("Realtime display_nodes change:", payload);
+      clearLocalDisplayNodeFallback();
+      void listDisplayNodes()
+        .then(onChange)
+        .catch((error) => console.error("Realtime display_nodes reload failed:", error));
     })
-    .subscribe();
+    .subscribe((status, error) => {
+      console.log("display_nodes realtime status:", status, error || "");
+    });
 
   return () => {
     localChannel?.close();

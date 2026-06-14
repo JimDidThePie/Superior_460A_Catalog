@@ -215,8 +215,5 @@ exception
   when duplicate_object then null;
 end $$;
 
--- This starter keeps policies open so the local password-protected admin can work immediately.
--- For public internet deployment, enable Supabase Auth and replace these with authenticated write policies.
-alter table public.products disable row level security;
-alter table public.display_nodes disable row level security;
-alter table public.showroom_settings disable row level security;
+-- Supabase Auth + RLS policies live in supabase/auth_rls_policies.sql.
+-- Run that file after applying this schema so /display is public read-only and /admin writes require login.

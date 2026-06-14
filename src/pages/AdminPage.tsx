@@ -1,17 +1,16 @@
 import { ArrowDown, ArrowUp, Download, Edit, Eye, EyeOff, LogOut, Monitor, Trash2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DisplayNodeManager } from "../components/DisplayNodeManager";
 import { DisplaySettings } from "../components/DisplaySettings";
 import { ProductForm } from "../components/ProductForm";
 import { useDisplayNodes } from "../hooks/useDisplayNodes";
 import { useDisplaySettings } from "../hooks/useDisplaySettings";
 import { useProducts } from "../hooks/useProducts";
-import { isAdminAuthenticated, logoutAdmin } from "../lib/authService";
+import { getAdminAuthState, logoutAdmin, subscribeAdminAuth } from "../lib/authService";
 import type { Product, ProductInput } from "../types/product";
 import { downloadCsv } from "../utils/csv";
 
-export function AdminPage() {
-  const authenticated = isAdminAuthenticated();
+function AdminDashboard() {
   const { products, loading, error, upsertProduct, removeProduct, moveProduct } = useProducts();
   const {
     nodes,
@@ -48,11 +47,6 @@ export function AdminPage() {
       ),
     );
   }, [search, sortedProducts]);
-
-  if (!authenticated) {
-    window.location.href = "/login";
-    return null;
-  }
 
   const handleSaveProduct = async (product: Product | ProductInput) => {
     await upsertProduct(product);
@@ -97,8 +91,8 @@ export function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
-    logoutAdmin();
+  const handleLogout = async () => {
+    await logoutAdmin();
     window.location.href = "/login";
   };
 
@@ -237,4 +231,89 @@ export function AdminPage() {
       </section>
     </main>
   );
+}
+
+export function AdminPage() {
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    getAdminAuthState()
+      .then((authState) => {
+        if (!mounted) {
+          return;
+        }
+
+        if (!authState.configured) {
+          setAuthError("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+          setAuthenticated(false);
+          return;
+        }
+
+        setAuthenticated(Boolean(authState.session && authState.user));
+      })
+      .catch((error) => {
+        if (mounted) {
+          setAuthError((error as Error).message || "Unable to verify admin login.");
+          setAuthenticated(false);
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setCheckingAuth(false);
+        }
+      });
+
+    const unsubscribe = subscribeAdminAuth((authState) => {
+      if (!mounted) {
+        return;
+      }
+
+      setAuthenticated(Boolean(authState.session && authState.user));
+      setCheckingAuth(false);
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!checkingAuth && !authenticated && !authError) {
+      window.location.href = "/login";
+    }
+  }, [authError, authenticated, checkingAuth]);
+
+  if (checkingAuth) {
+    return (
+      <main className="login-shell">
+        <section className="login-panel">
+          <h1>Checking Admin Login</h1>
+          <p className="save-status">Verifying your Supabase session...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (authError) {
+    return (
+      <main className="login-shell">
+        <section className="login-panel">
+          <h1>Admin Login Unavailable</h1>
+          <p className="form-error">{authError}</p>
+          <a href="/display">Back to display</a>
+        </section>
+      </main>
+    );
+  }
+
+  if (!authenticated) {
+    return null;
+  }
+
+  return <AdminDashboard />;
 }
