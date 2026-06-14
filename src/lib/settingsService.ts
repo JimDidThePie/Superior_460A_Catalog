@@ -82,6 +82,10 @@ const normalizeVolume = (volume: unknown) => {
   return Math.min(Math.max(value, 0), 1);
 };
 
+const normalizeWeatherWidgetSize = (size: unknown): ShowroomSettings["weatherWidgetSize"] => {
+  return size === "hidden" || size === "half" || size === "full" ? size : "compact";
+};
+
 const normalizeColor = (color: unknown, fallback: string) => {
   if (typeof color !== "string") {
     return fallback;
@@ -132,6 +136,7 @@ export const normalizeSettings = (settings?: Partial<ShowroomSettings> | null): 
     settings?.fallbackToImageOnModelError ?? DEFAULT_SHOWROOM_SETTINGS.fallbackToImageOnModelError,
   showQrCodes: settings?.showQrCodes ?? DEFAULT_SHOWROOM_SETTINGS.showQrCodes,
   weatherEnabled: settings?.weatherEnabled ?? DEFAULT_SHOWROOM_SETTINGS.weatherEnabled,
+  weatherWidgetSize: normalizeWeatherWidgetSize(settings?.weatherWidgetSize),
   timeFormat: settings?.timeFormat === "24h" ? "24h" : "12h",
   displayTheme: settings?.displayTheme === "light" ? "light" : "dark",
   autoScrollEnabled: settings?.autoScrollEnabled ?? DEFAULT_SHOWROOM_SETTINGS.autoScrollEnabled,

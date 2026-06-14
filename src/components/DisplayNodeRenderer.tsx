@@ -1,6 +1,5 @@
 import { ExternalLink, Globe2, Image as ImageIcon, Mail, Megaphone, Phone, UserRound, Video } from "lucide-react";
 import { useState, type CSSProperties } from "react";
-import { DisplayMusicPlayer } from "./DisplayMusicPlayer";
 import { ProductMedia } from "./ProductMedia";
 import { WeatherTimeWidget } from "./WeatherTimeWidget";
 import type { DisplayNode } from "../types/displayNode";
@@ -131,12 +130,20 @@ function ProductNode({ node, settings }: DisplayNodeRendererProps) {
         ) : null}
       </div>
 
-      {showQrCode ? (
-        <div className="qr-panel">
+      <div className={`qr-panel ${showQrCode ? "" : "product-promo-panel"}`}>
+        {showQrCode ? (
+          <>
           <img src={qrUrl} alt={`QR code for ${node.title}`} loading="lazy" />
           <span>{settings.labels.qrCaption}</span>
-        </div>
-      ) : null}
+          </>
+        ) : (
+          <>
+            <span className="product-promo-mark">{settings.labels.brandMark}</span>
+            <strong>{node.category || "Superior Pool Products"}</strong>
+            <small>{node.featured ? settings.labels.featuredBadge : "Showroom Selection"}</small>
+          </>
+        )}
+      </div>
     </article>
   );
 }
@@ -335,23 +342,30 @@ function BannerNode({ node, settings }: DisplayNodeRendererProps) {
 }
 
 function WeatherTimeNode({ node, settings }: DisplayNodeRendererProps) {
+  if (settings.weatherWidgetSize === "hidden") {
+    return null;
+  }
+
   const title = node.title || getNodeSettingText(node, "headline") || "Current showroom conditions";
   const body =
     node.body ||
     getNodeSettingText(node, "body") ||
     `Live time and local weather for ${settings.locationName || settings.labels.headerLabel}.`;
   const note = getNodeSettingText(node, "note") || (settings.weatherEnabled ? "Updated throughout the day" : "Weather widget is hidden");
-  const showMusicPlayer = settings.musicEnabled && settings.musicPlacement === "weather";
 
   return (
-    <article id={`node-${node.id}`} className={getNodeClassName(node, "display-node display-node-weather-time")} style={getNodeStyle(node, settings)}>
+    <article
+      id={`node-${node.id}`}
+      className={getNodeClassName(node, `display-node display-node-weather-time weather-size-${settings.weatherWidgetSize}`)}
+      style={getNodeStyle(node, settings)}
+    >
       <div className="weather-node-copy">
         {node.subtitle || node.category ? <p>{node.subtitle || node.category}</p> : null}
         <h2>{title}</h2>
         <span>{body}</span>
         <small>{note}</small>
       </div>
-      {showMusicPlayer ? <DisplayMusicPlayer settings={settings} placement="weather" /> : <div className="weather-node-fill" />}
+      <div className="weather-node-fill" />
       <WeatherTimeWidget settings={settings} />
     </article>
   );

@@ -1,4 +1,4 @@
-import { Gauge, LayoutGrid, Pause, Play, Settings } from "lucide-react";
+import { Gauge, LayoutGrid, Menu, Pause, Play, Settings, X } from "lucide-react";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { DisplayMusicPlayer } from "../components/DisplayMusicPlayer";
 import { DisplayNodeRenderer } from "../components/DisplayNodeRenderer";
@@ -15,6 +15,7 @@ export function DisplayPage() {
   const { settings, updateSettings } = useDisplaySettings();
   const [paused, setPaused] = useState(false);
   const [category, setCategory] = useState(ALL_CATEGORIES);
+  const [controlsOpen, setControlsOpen] = useState(false);
 
   const safeNodes = Array.isArray(nodes) ? nodes : [];
   const safeProducts = Array.isArray(products) ? products : [];
@@ -53,8 +54,7 @@ export function DisplayPage() {
     () => filteredNodes.map((node) => `${node.id}:${node.sortOrder}:${node.hidden}`).join("|"),
     [filteredNodes],
   );
-  const hasWeatherNode = useMemo(() => filteredNodes.some((node) => node.type === "weather_time"), [filteredNodes]);
-  const showHeaderMusicPlayer = settings.musicEnabled && (settings.musicPlacement !== "weather" || !hasWeatherNode);
+  const showDrawerMusicPlayer = settings.musicEnabled;
 
   useEffect(() => {
     document.title = settings.pageTitle || "Showroom Products";
@@ -65,6 +65,24 @@ export function DisplayPage() {
       setCategory(ALL_CATEGORIES);
     }
   }, [categories, category]);
+
+  useEffect(() => {
+    if (!controlsOpen) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => setControlsOpen(false), 20000);
+    return () => window.clearTimeout(timeout);
+  }, [
+    category,
+    controlsOpen,
+    paused,
+    settings.autoScrollEnabled,
+    settings.autoScrollSpeed,
+    settings.musicEnabled,
+    settings.musicMode,
+    settings.musicVolume,
+  ]);
 
   useEffect(() => {
     if (paused || !settings.autoScrollEnabled || nodesLoading || filteredNodes.length === 0) {
@@ -146,27 +164,33 @@ export function DisplayPage() {
 
   const loading = nodesLoading || (!safeNodes.length && productsLoading);
   const error = nodesError || productsError;
+  const controlsPanelId = "display-controls-panel";
 
   return (
     <main className={`display-shell ${settings.displayTheme === "light" ? "display-light" : "display-dark"}`} style={shellStyle}>
-      <header className="display-header">
-        <div className="brand-lockup">
-          {settings.logoUrl ? (
-            <img className="brand-logo" src={settings.logoUrl} alt={settings.pageTitle || settings.labels.headerLabel} />
-          ) : (
-            <span className="brand-mark">{settings.labels.brandMark}</span>
-          )}
-          <div>
-            <p>{settings.labels.headerLabel}</p>
-            <h1>{settings.pageTitle}</h1>
-          </div>
-        </div>
+      <button
+        type="button"
+        className="display-controls-trigger"
+        aria-label={controlsOpen ? "Close display controls" : "Open display controls"}
+        aria-expanded={controlsOpen}
+        aria-controls={controlsPanelId}
+        onClick={() => setControlsOpen((current) => !current)}
+      >
+        {controlsOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+      </button>
 
-        {settings.bannerUrl ? (
-          <div className="header-banner">
-            <img src={settings.bannerUrl} alt="" />
+      {controlsOpen ? <button type="button" className="display-controls-backdrop" aria-label="Close display controls" onClick={() => setControlsOpen(false)} /> : null}
+
+      <aside id={controlsPanelId} className={`display-control-drawer ${controlsOpen ? "is-open" : ""}`} aria-hidden={!controlsOpen}>
+        <div className="display-control-drawer-heading">
+          <div>
+            <p>Showroom controls</p>
+            <h2>Display Feed</h2>
           </div>
-        ) : null}
+          <button type="button" aria-label="Close display controls" onClick={() => setControlsOpen(false)}>
+            <X aria-hidden="true" />
+          </button>
+        </div>
 
         <div className="display-controls">
           <label>
@@ -206,9 +230,35 @@ export function DisplayPage() {
             {settings.labels.adminLink}
           </a>
         </div>
-      </header>
 
-      {showHeaderMusicPlayer ? <DisplayMusicPlayer settings={settings} placement="header" /> : null}
+        {showDrawerMusicPlayer ? <DisplayMusicPlayer settings={settings} placement="header" /> : null}
+      </aside>
+
+      <header className="display-header">
+        <div className="brand-lockup">
+          {settings.logoUrl ? (
+            <img className="brand-logo" src={settings.logoUrl} alt={settings.pageTitle || settings.labels.headerLabel} />
+          ) : (
+            <span className="brand-mark">{settings.labels.brandMark}</span>
+          )}
+          <div>
+            <p>{settings.labels.headerLabel}</p>
+            <h1>{settings.pageTitle}</h1>
+          </div>
+        </div>
+
+        <div className={`header-banner ${settings.bannerUrl ? "" : "header-banner-fallback"}`}>
+          {settings.bannerUrl ? (
+            <img src={settings.bannerUrl} alt="" />
+          ) : (
+            <div>
+              <span>{settings.labels.brandMark}</span>
+              <strong>Ask the Showroom Team</strong>
+              <small>Equipment guidance, water-ready upgrades, and today&apos;s featured picks.</small>
+            </div>
+          )}
+        </div>
+      </header>
 
       {loading ? <div className="status-message">{settings.labels.loadingNodes}</div> : null}
       {error ? <div className="status-message error">{error}</div> : null}

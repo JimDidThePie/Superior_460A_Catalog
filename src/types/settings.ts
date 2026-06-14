@@ -3,6 +3,7 @@ export type TimeFormat = "12h" | "24h";
 export type DisplayTheme = "dark" | "light";
 export type MusicMode = "local" | "spotify";
 export type MusicPlacement = "header" | "weather";
+export type WeatherWidgetSize = "hidden" | "compact" | "half" | "full";
 
 export type DisplayLabels = {
   headerLabel: string;
@@ -61,6 +62,7 @@ export type ShowroomSettings = {
   fallbackToImageOnModelError: boolean;
   showQrCodes: boolean;
   weatherEnabled: boolean;
+  weatherWidgetSize: WeatherWidgetSize;
   locationName: string;
   latitude: string;
   longitude: string;
@@ -139,6 +141,7 @@ export const DEFAULT_SHOWROOM_SETTINGS: ShowroomSettings = {
   fallbackToImageOnModelError: true,
   showQrCodes: true,
   weatherEnabled: true,
+  weatherWidgetSize: "compact",
   locationName: "Showroom",
   latitude: "40.7128",
   longitude: "-74.0060",

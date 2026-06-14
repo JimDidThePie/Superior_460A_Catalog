@@ -333,6 +333,20 @@ export function DisplaySettings({ settings, onChange, saving = false, saveStatus
         </label>
 
         <label>
+          Weather Widget Size
+          <span>Controls how much room the weather/time node uses on the display.</span>
+          <select
+            value={settings.weatherWidgetSize}
+            onChange={(event) => onChange({ weatherWidgetSize: event.target.value as ShowroomSettings["weatherWidgetSize"] })}
+          >
+            <option value="hidden">Hidden</option>
+            <option value="compact">Compact</option>
+            <option value="half">Half</option>
+            <option value="full">Full</option>
+          </select>
+        </label>
+
+        <label>
           Showroom location
           <input
             value={settings.locationName}
