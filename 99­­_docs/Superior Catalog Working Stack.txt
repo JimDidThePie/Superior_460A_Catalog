@@ -1,0 +1,20 @@
+Local project:
+D:\Codex\Superior_460A_Catalog
+
+Live app:
+https://sppcatalog460a.netlify.app
+
+Admin:
+https://sppcatalog460a.netlify.app/admin
+
+Display:
+https://sppcatalog460a.netlify.app/display
+
+Backend:
+Supabase - Superior Digital Catalog
+
+Hosting:
+Netlify - sppcatalog460a
+
+GitHub:
+JimDidThePie/Superior_460A_Catalog
